@@ -5,3 +5,6 @@
 ##使用
     项目核心代码在包core中，测试时需根据本地环境，修改位于resources文件夹下的配置文件jdbc.properties和log4j.properties(主要修改日志文件路径，默认D:/log/project/)。测试文件为resources目录下的2017-09-19.csv文件。
     修改完配置文件后，直接在test包下运行单元测试代码CVS2MySqlTest。
+##ps:
+    因为数据项有三个，所以将字段item_value 设置为三个字段，分别为item_value1，item_value2，item_value。
+
