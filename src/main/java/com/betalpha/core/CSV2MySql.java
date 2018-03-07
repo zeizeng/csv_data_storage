@@ -9,23 +9,25 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 /**
  * 5000条数据一批次存储到数据库中
- *
+ * <p>
  * Created by Administrator on 2018/3/5.
  */
 public class CSV2MySql {
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(CSV2MySql.class);
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     private int batchSize = 5000;
     private Connection con = JDBCUtils.getConnection();
 
-    public void run(String cvsName) throws SQLException, ParseException {
+    public int run(String cvsName) throws SQLException, ParseException {
+        int assertInt = 1;
         int count = 0;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String tradeDate = cvsName.split("\\.")[0];
         java.util.Date date = sdf.parse(tradeDate);
         java.sql.Date sqlDate = new java.sql.Date(date.getTime());
@@ -38,7 +40,7 @@ public class CSV2MySql {
         try {
             while ((line = br.readLine()) != null)  //读取到的内容给line变量
             {
-                logger.info("获取到数据："+line);
+                logger.info("获取到数据：" + line);
                 if (count == 0) {
                     count++;
                     continue;
@@ -46,8 +48,8 @@ public class CSV2MySql {
                 count++;
                 everyLine = line;
                 String[] data = everyLine.split(",");
-                if (data.length < 4 ){
-                    logger.info("获取到残缺数据："+line);
+                if (data.length < 4) {
+                    logger.info("获取到残缺数据：" + line);
                     continue;
                 }
                 stmt.setString(1, UUID.randomUUID().toString().replaceAll("-", ""));
@@ -58,17 +60,30 @@ public class CSV2MySql {
                 stmt.setString(6, data[3]);
                 stmt.addBatch();
                 if (count % batchSize == 0) {
-                    stmt.executeBatch();
+                    int[] resultInt = stmt.executeBatch();
+
+                    for (int i : resultInt) {
+                        if (i < 0 && i != Statement.SUCCESS_NO_INFO)
+                            assertInt = 0;
+                    }
                     con.commit();
                 }
             }
             if (count % batchSize != 0) {
-                stmt.executeBatch();
+                int[] resultInt = stmt.executeBatch();
+                if (assertInt != 0) {
+                    for (int i : resultInt) {
+                        if (i < 0 && i != Statement.SUCCESS_NO_INFO)
+                            assertInt = 0;
+                    }
+                }
                 con.commit();
             }
+            br.close();
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
         logger.info("cvs 文件：" + cvsName + " 存储完成");
+        return assertInt;
     }
 }

@@ -12,9 +12,10 @@ import java.text.ParseException;
 public class JDBCUtilsTest {
 
     @Test
-    public void testGetConnection(){
+    public void testGetConnection() {
         try {
-            new CSV2MySql().run("2017-09-19.csv");
+            int assertInt = new CSV2MySql().run("2017-09-19.csv");
+            assert assertInt == 1;
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (ParseException e) {
